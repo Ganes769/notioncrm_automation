@@ -107,6 +107,8 @@ def to_plain_row(page: dict) -> dict:
 
 def get_all_rows(database_id: str | None = None) -> list[dict]:
     database_id = database_id or NOTION_DATABASE_ID
+    if not database_id:
+     raise ValueError("NOTION_DATABASE_ID is required")
     data_source_id = get_data_source_id(database_id)
     pages = get_database_rows(data_source_id)
     rows = [to_plain_row(page) for page in pages]
