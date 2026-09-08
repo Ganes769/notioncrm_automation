@@ -82,6 +82,7 @@ def clean_frame(raw: pd.DataFrame) -> pd.DataFrame:
   
     for source, cleaned in (("Account", "account"), ("Contact", "contact"), ("Work email", "work_email")):
         changed = raw[source].ne(out[cleaned]).sum()
+        print(f"[transform] {source}: {changed} value(s) cleaned")
 
     return out
 
