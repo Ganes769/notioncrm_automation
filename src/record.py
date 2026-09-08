@@ -40,7 +40,15 @@ def _text(value):
 def company_records(clean: pd.DataFrame) -> list[dict]:
     rows = clean.copy()
     rows["domain"] = rows["website"].map(domain_of)
-    rows = rows.dropna(subset=["domain"]).drop_duplicates(subset=["domain"], keep="first")
+
+    with_domain = rows.dropna(subset=["domain"])
+    rows = with_domain.drop_duplicates(subset=["domain"], keep="first")
+
+    print(f"[record] {len(clean)} lead rows -> {len(rows)} companies")
+    print(f"[record]   {len(clean) - len(with_domain)} dropped for no website")
+    print(f"[record]   {len(with_domain) - len(rows)} collapsed as repeat domains")
+    for domain in with_domain["domain"][with_domain["domain"].duplicated(keep=False)].unique():
+        print(f"[record]   shared domain: {domain}")
 
     out = []
     for row in rows.itertuples(index=False):
@@ -76,6 +84,9 @@ def people_records(clean: pd.DataFrame) -> list[dict]:
                 "owner": _text(row.owner),
             }
         )
+
+    unlinked = sum(1 for person in out if person["company_domain"] is None)
+    print(f"[record] {len(out)} people, {unlinked} with no company_domain to link on")
     return out
 
 

@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 
@@ -32,13 +33,17 @@ def get_data_source_id(database_id: str) -> str:
     if not data_sources:
         raise RuntimeError(f"Database {database_id} has no data sources.")
 
-    return data_sources[0]["id"]
+    data_source_id = data_sources[0]["id"]
+    print(f"[notion] database {database_id}")
+    print(f"[notion]   resolves to data source {data_source_id}  <- what /query needs")
+    return data_source_id
 
 
 def get_database_rows(data_source_id: str) -> list[dict]:
     url = f"{NOTION_API_BASE_URL}/data_sources/{data_source_id}/query"
     rows = []
     start_cursor = None
+    page = 0
 
     while True:
         payload = {"page_size": 100}
@@ -49,7 +54,11 @@ def get_database_rows(data_source_id: str) -> list[dict]:
         response.raise_for_status()
 
         data = response.json()
-        rows.extend(data.get("results", []))
+        results = data.get("results", [])
+        rows.extend(results)
+
+        page += 1
+        print(f"[notion] page {page}: {len(results)} rows, has_more={data.get('has_more')}")
 
         start_cursor = data.get("next_cursor")
         if not data.get("has_more") or not start_cursor:
@@ -99,4 +108,15 @@ def to_plain_row(page: dict) -> dict:
 def get_all_rows(database_id: str | None = None) -> list[dict]:
     database_id = database_id or NOTION_DATABASE_ID
     data_source_id = get_data_source_id(database_id)
-    return [to_plain_row(page) for page in get_database_rows(data_source_id)]
+    pages = get_database_rows(data_source_id)
+    rows = [to_plain_row(page) for page in pages]
+
+    if pages:
+        # One page before and after flattening: Notion's nesting is the surprise here.
+        print("[notion] raw JSON for the first row:")
+        print(json.dumps(pages[0], indent=2))
+        print("[notion] same row after flattening:")
+        print(json.dumps(rows[0], indent=2, default=str))
+
+    print(f"[notion] returned {len(rows)} flat rows with {len(rows[0]) if rows else 0} fields each")
+    return rows

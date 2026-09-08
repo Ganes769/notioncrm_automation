@@ -3,6 +3,9 @@ import pandas as pd
 from notion import get_all_rows
 from transform import clean_frame, validate
 
+pd.set_option("display.width", 200)
+pd.set_option("display.max_columns", 50)
+
 rows = get_all_rows()
 raw = pd.DataFrame(rows).convert_dtypes()
 

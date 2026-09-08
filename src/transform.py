@@ -1,4 +1,3 @@
-# src/clean.py
 """Basic cleaning and validation for Notion CRM rows."""
 
 from __future__ import annotations
@@ -80,6 +79,10 @@ def clean_frame(raw: pd.DataFrame) -> pd.DataFrame:
     out["last_name"] = (names[1] if names.shape[1] > 1 else pd.NA)
     out["last_name"] = out["last_name"].astype("string")
 
+  
+    for source, cleaned in (("Account", "account"), ("Contact", "contact"), ("Work email", "work_email")):
+        changed = raw[source].ne(out[cleaned]).sum()
+
     return out
 
 
@@ -152,7 +155,9 @@ def validate(clean: pd.DataFrame, raw: pd.DataFrame) -> pd.DataFrame:
     columns = ["row", "source_id", "field", "problem", "value"]
     if not issues:
         return pd.DataFrame(columns=columns)
-    return pd.DataFrame(issues).sort_values(["row", "field"], ignore_index=True)
+
+    frame = pd.DataFrame(issues).sort_values(["row", "field"], ignore_index=True)
+    return frame
 
 
 def run():
